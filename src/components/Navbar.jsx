@@ -9,7 +9,7 @@ export default function Navbar() {
       display: "flex",
       justifyContent: "space-between"
     }}>
-      <div><Link to="/" style={{ color: "white", textDecoration: "none" }}>🏠 skat</Link></div>
+      <div><Link to="/" style={{ color: "white", textDecoration: "none" }}>♠️ skat</Link></div>
       <div>
         <Link to="/games" style={{ color: "white", marginLeft: "1rem" }}>Games</Link>
       </div>

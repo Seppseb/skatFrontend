@@ -27,4 +27,8 @@ npm run copy-and-deploy
 
 # TODO
 
-  
+Border around player to show whos turn it is
+put minBid number in bid button, show currentBid on board
+show/hide playCard button in bidphase/after
+
+endPoint bid, stopBid ...

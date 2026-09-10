@@ -1,20 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
 import { useGameWebSocket } from "../hooks/useGameWebSocket";
-import PlayerPanel from "../components/PlayerPanel";
-import ShopBar from "../components/ShopBar";
-import HexBoard from "../components/HexBoard";
-import VictimChoosePopup from "../components/VictimChoosePopup";
+import OpponentSide from "../components/OpponentCards";
+import PlayerInventory from "../components/PlayerInventory";
 import { getGame, sendReady, build, buildRoad, getUserInfo, moveRobber, chooseVictim, confirmDice } from "../api/gamesApi";
-import DiceRollPopup from "../components/DiceRollPopup";
-import WinPopup from "../components/WinPopup";
-import { AnimatePresence } from "framer-motion";
 import { playSound } from "../utils/sounds";
 import roundStartSound from "../assets/sounds/SFX_impactjar01.wav";
-import roadSound from "../assets/sounds/SFX_impactwoodraw08.wav";
-import villageSound from "../assets/sounds/SFX_impactwoodraw01.wav";
-import citySound from "../assets/sounds/SFX_impactpunchbag02.wav";
-import robberSound from "../assets/sounds/SFX_impactbigmuffled07.wav";
 import victorySound from "../assets/sounds/brass_positive_long.wav";
 
 export default function GameBoardPage() {
@@ -29,17 +20,9 @@ export default function GameBoardPage() {
   const [log, setLog] = useState("");
   const [playerId, setPlayerId] = useState("");
   const [player, setPlayer] = useState(null);
+  const [leftPlayer, setLeftPlayer] = useState(null);
+  const [rightPlayer, setRightPlayer] = useState(null);
   const [isPlayerTurn, setIsPlayerTurn] = useState(false);
-  const [isMovingRobber, setIsMovingRobber] = useState(false);
-  const [showVictimPopup, setShowVictimPopup] = useState(false);
-  
-  const [showDicePopup, setShowDicePopup] = useState(false);
-  const [showWinPopup, setShowWinPopup] = useState(true);
-  const [diceValues, setDiceValues] = useState([0, 0]); // To hold the values from the server
-
-
-  const [isPlacingInitialVillage, setIsPlacingInitialVillage] = useState(false);
-  const [isPlacingInitialRoad, setIsPlacingInitialRoad] = useState(false);
 
 
   const handleWebSocketMessage = useCallback((event) => {
@@ -90,7 +73,7 @@ export default function GameBoardPage() {
   useEffect(() => {
     if (isConnected) {
       //console.log("WebSocket connected — sending READY");
-      sendReady(gameId);
+      //sendReady(gameId);
     }
   }, [isConnected, gameId]);
 
@@ -108,12 +91,28 @@ export default function GameBoardPage() {
   
   const fetchGame = async () => {
     const res = await getGame(gameId);
-    setGame(res.data);
-    if (res.data.players) {
-      setPlayers(res.data.players);
+    const game = res.data;
+    console.log(game);
+
+    if (!!game.players && !!game.you) {
+      const leftPlayerIndex = (game.you.playerIndex + 1) % 3;
+      const rightPlayerIndex = (game.you.playerIndex + 2) % 3;
+      for (const id in game.players) {
+        let player = game.players[id];
+        if (player.playerIndex == leftPlayerIndex) {
+          setLeftPlayer(player);
+        }
+        if (player.playerIndex == rightPlayerIndex) {
+          setRightPlayer(player);
+        }
+      }
     }
-    if (res.data.you) {
-      setPlayer(res.data.you);
+    setGame(game);
+    if (game.players) {
+      setPlayers(game.players);
+    }
+    if (game.you) {
+      setPlayer(game.you);
     }
   };
 
@@ -122,44 +121,13 @@ export default function GameBoardPage() {
     if (!res || !res.data) return;
     const data = res.data.split(";");
     setPlayerId(data[0]);
-
+    console.log(res.data);
   };
   
     
   useEffect(() => {
     const isNowPlayerTurn = !!playerId && playerId === game?.currentPlayer?.userId;
     setIsPlayerTurn(isNowPlayerTurn);
-    setIsMovingRobber(!!game && game?.isWaitingForMovingRobber);
-    if (game?.isWaitingForChoosingVictim && isNowPlayerTurn) {
-      setShowVictimPopup(true);
-    } else {
-      setShowVictimPopup(false);
-    }
-
-    if (!isNowPlayerTurn) {
-      setIsPlacingInitialVillage(false);
-      setIsPlacingInitialRoad(false);
-    } else {
-      if (game.state == 'PLACEMENT') {
-        if (game.isInitialIsPlacingRoad) {
-          setIsPlacingInitialVillage(false);
-          setIsPlacingInitialRoad(true);
-        } else {
-          setIsPlacingInitialVillage(true);
-          setIsPlacingInitialRoad(false);
-        }
-      } else {
-        setIsPlacingInitialVillage(false);
-        setIsPlacingInitialRoad(false);
-      }
-    }
-
-    if (isPlayerTurn && game?.lastDiceRoll && game?.lastDiceRoll.length == 2) {
-      const dice1 = game?.lastDiceRoll[0];
-      const dice2 = game?.lastDiceRoll[1];
-      setDiceValues([dice1, dice2]);
-      setShowDicePopup(true);
-    }
   }, [playerId, game, game?.currentPlayer, game?.state, game?.initialIsPlacingRoad, game?.isWaitingForMovingRobber, game?.isWaitingForChoosingVictim]);
 
   // center on load
@@ -224,7 +192,7 @@ export default function GameBoardPage() {
       {/* ... existing layout ... */}
       <div className="flex flex-1 overflow-hidden">
         <div className="w-1/5 bg-emerald-800 border-r border-emerald-700 flex flex-col justify-center p-4">
-          <PlayerPanel side="left" players={players} you={player} gameId={gameId} isPlayerTurn={isPlayerTurn} playedDevCardThisRound={game?.playedDevCardThisRound} gameRound={game?.roundNumber} currentTradeOffer={game?.currentTradeOffer} />
+          <OpponentSide playersOfThisSide={leftPlayer} you={player}/>
         </div>
         <div
           className="flex-1 bg-slate-900 relative overflow-hidden no-select"
@@ -244,66 +212,24 @@ export default function GameBoardPage() {
               willChange: "transform",
             }}
           >
-            <HexBoard 
-              board ={ game && game.board ? game.board : null }
-              onBuild={handleBuild}
-              onBuildRoad={handleBuildRoad}
-              onMoveRobber={handleMoveRobber}
-              isPlacingInitialVillage={isPlacingInitialVillage}
-              isPlacingInitialRoad={isPlacingInitialRoad}
-              isPlayerTurn={isPlayerTurn}
-              isMovingRobber={isMovingRobber}
-              isBuildPhase={(game?.state === 'IN_PROGRESS' || game?.state === 'FINISHED') && isPlayerTurn && game?.isBuildPhase}
-              player={player}
-            />
+
           </div>
 
           <div className="pointer-events-none absolute inset-0 border-4 border-emerald-950"></div>
         </div>
         <div className="w-1/5 bg-emerald-800 border-l border-emerald-700 flex flex-col justify-center p-4">
-          <PlayerPanel side="right" players={players} you={player} gameId={gameId} isPlayerTurn={isPlayerTurn} />
+          <OpponentSide playersOfThisSide={rightPlayer} you={player}/>
         </div>
       </div>
       <div className="h-32 bg-emerald-950 border-t border-emerald-800">
-        <ShopBar 
-          gameId = {gameId}
-          bank = {game?.bank}
-          log = {log}
-          isPlayerTurn = {isPlayerTurn && (game?.state === 'IN_PROGRESS' || game?.state === 'FINISHED')}
-          isBuildPhase = {game?.isBuildPhase}
-          game = {game}
-        />
+      <PlayerInventory
+        player={player}
+        bid={true}
+        canBid={true}
+        onBid={() => console.log("bid")}
+        onStopBidding={() => console.log("stop bidding")}
+      />
       </div>
-
-      {/* *** NEW POPUP INTEGRATION *** */}
-      <AnimatePresence>
-        {showDicePopup && (
-          <DiceRollPopup
-            diceValues={diceValues}
-            onConfirm={handleConfirmDice}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showVictimPopup && (
-          <VictimChoosePopup
-            possibleVictims={game?.possibleVictims}
-            onChoose={handleChooseVictim}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showWinPopup && game?.winner && (
-          <WinPopup
-            winner={game.winner}
-            singleDieStats={game.singleDieStats}
-            doubleDieStats={game.doubleDieStats}
-            onReturnToGame={handleReturnToGame}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }
