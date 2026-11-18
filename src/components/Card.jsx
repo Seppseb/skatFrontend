@@ -102,7 +102,9 @@ export default function Card({
   onDragEnd,
   dragOver = false,
 }) {
-  const image = cardImages[card?.type]?.[card?.value] || BackSite;
+  const cardSuit = card?.type || card?.suit;
+  const cardVal = card?.value || card?.rank;
+  const image = cardImages[cardSuit]?.[cardVal] || BackSite;
   const sizeClass = SIZE_CLASSES[size] ?? SIZE_CLASSES.medium;
 
   return (
@@ -128,7 +130,7 @@ export default function Card({
     >
       <img
         src={image}
-        alt={card ? `${card.type} of ${card.value}` : "Card back"}
+        alt={card ? `${cardSuit} of ${cardVal}` : "Card back"}
         draggable="false"
         className="w-full h-full object-contain rounded-lg shadow select-none pointer-events-none"
       />

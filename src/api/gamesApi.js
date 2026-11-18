@@ -16,27 +16,21 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// Lobby & Lifecycle
 export const listGames = () => API.get("");
 export const createGame = (config) => API.post("/create", config);
-export const joinGame = (gameId, name) => API.post(`/${gameId}/join?name=${name}`);
+export const joinGame = (gameId, name) => API.post(`/${gameId}/join?name=${encodeURIComponent(name)}`);
 export const startGame = (gameId) => API.post(`/${gameId}/start`);
 export const sendReady = (gameId) => API.post(`/${gameId}/ready`);
-export const throwDiceForTurn = (gameId) => API.post(`/${gameId}/throwDiceForTurn`);
-export const confirmDice = (gameId) => API.post(`/${gameId}/confirmDice`);
-export const build = (gameId, row, col) => API.post(`/${gameId}/build/${row}/${col}`);
-export const buildRoad = (gameId, row, col) => API.post(`/${gameId}/buildRoad/${row}/${col}`);
-export const buyDevelopment = (gameId) => API.post(`/${gameId}/buyDevelopment`);
-export const playDevelopment = (gameId, type, resType) => API.post(`/${gameId}/playDevelopment/${type}/${resType}`);
-export const bankTrade = (gameId, wood, clay, wheat, wool, stone) => API.post(`/${gameId}/bankTrade/${wood}/${clay}/${wheat}/${wool}/${stone}`);
-export const askPlayerTrade = (gameId, wood, clay, wheat, wool, stone) => API.post(`/${gameId}/askPlayerTrade/${wood}/${clay}/${wheat}/${wool}/${stone}`);
-export const acceptPlayerTrade = (gameId, wood, clay, wheat, wool, stone) => API.post(`/${gameId}/acceptPlayerTrade/${wood}/${clay}/${wheat}/${wool}/${stone}`);
-export const declinePlayerTrade = (gameId, wood, clay, wheat, wool, stone) => API.post(`/${gameId}/declinePlayerTrade/${wood}/${clay}/${wheat}/${wool}/${stone}`);
-export const finishPlayerTrade = (gameId, partnerId) => API.post(`/${gameId}/finishPlayerTrade/${partnerId}`);
-export const cancelPlayerTrade = (gameId) => API.post(`/${gameId}/cancelPlayerTrade`);
-export const settleDebt = (gameId, wood, clay, wheat, wool, stone) => API.post(`/${gameId}/settleDebt/${wood}/${clay}/${wheat}/${wool}/${stone}`);
-export const moveRobber = (gameId, oldRow, oldCol, row, col) => API.post(`/${gameId}/moveRobber/${oldRow}/${oldCol}/${row}/${col}`);
-export const chooseVictim = (gameId, victimId) => API.post(`/${gameId}/chooseVictim/${victimId}`);
-export const endTurn = (gameId) => API.post(`/${gameId}/endTurn`);
 export const getGameInfo = (gameId) => API.get(`/info/${gameId}`);
 export const getGame = (gameId) => API.get(`/${gameId}`);
 export const getUserInfo = () => API.get(`/whoAmI`);
+
+// Skat Game Actions
+export const bid = (gameId, bidValue) => API.post(`/${gameId}/bid`, { bid: bidValue });
+export const stopBid = (gameId) => API.post(`/${gameId}/stopBid`);
+export const passBid = (gameId) => API.post(`/${gameId}/passBid`);
+export const pickSkat = (gameId) => API.post(`/${gameId}/pickSkat`);
+export const discardSkat = (gameId, cards) => API.post(`/${gameId}/discardSkat`, { cards });
+export const declareGame = (gameId, declaration) => API.post(`/${gameId}/declareGame`, declaration);
+export const playCard = (gameId, card) => API.post(`/${gameId}/playCard`, card);
